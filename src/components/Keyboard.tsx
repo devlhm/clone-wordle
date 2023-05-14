@@ -10,8 +10,8 @@ export const Keyboard = () => {
 
 	return (
 		<StyledKeyboard>
-			{QWERTY_MATRIX.map((elem) => (
-				<KeyRow letters={elem} />
+			{QWERTY_MATRIX.map((elem, index) => (
+				<KeyRow key={index} rowId={index} letters={elem} />
 			))}
 		</StyledKeyboard>
 	);

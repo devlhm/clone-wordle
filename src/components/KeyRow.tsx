@@ -3,21 +3,19 @@ import { StyledKeyRow } from "./styles/KeyRow.styled";
 
 type KeyRowProps = {
 	letters: string[];
+	rowId: number;
 };
 
 const KeyRow = (props: KeyRowProps) => {
 	const letters = props.letters;
-	const keys: JSX.Element[] = [];
 
-	letters.forEach((letter) => {
-		keys.push(
-			<Key
-				letter={letter}
-			/>
-		);
-	});
-
-	return <StyledKeyRow>{keys}</StyledKeyRow>;
+	return (
+		<StyledKeyRow>
+			{letters.map((letter, index) => (
+				<Key letter={letter} key={index} />
+			))}
+		</StyledKeyRow>
+	);
 };
 
 export default KeyRow;

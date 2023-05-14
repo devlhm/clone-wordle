@@ -13,4 +13,9 @@ export const StyledKey = styled.button`
     font-weight: bolder;
     font-size: 1.2em;
     cursor: pointer;
+
+    &:disabled {
+        cursor: default;
+        background-color: ${({ theme }) => theme.letterCollors.wrong};
+    }
 `

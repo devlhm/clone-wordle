@@ -10,7 +10,7 @@ type KeyProps = {
 }
 
 const Key = (props: KeyProps) => {
-    const {handleInput} = useContext(GameContext);
+    const {handleInput, disabledKeys} = useContext(GameContext);
 
     switch(props.letter) {
         case "Enter":
@@ -18,7 +18,7 @@ const Key = (props: KeyProps) => {
         case "Backspace":
             return <BSKey onClick={() => handleInput(props.letter)}/>
         default:
-            return <StyledKey onClick={() => handleInput(props.letter)}>{props.letter}</StyledKey>
+            return <StyledKey disabled={disabledKeys.current.includes(props.letter)} onClick={() => handleInput(props.letter)}>{props.letter}</StyledKey>
     }
 }
 
