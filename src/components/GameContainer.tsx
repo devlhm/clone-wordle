@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useRef } from "react";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { Keyboard } from "./Keyboard";
 import LetterGrid from "./LetterGrid";
 import {
@@ -9,17 +9,26 @@ import {
 import { StyledToast } from "./styles/Toast.styled";
 import { usePersistedState } from "../hooks/usePersistedState";
 import getFromLocalStorage from "../utils/getFromLocalStorage";
+import { generateWordSet } from "../utils/wordSet";
 
 const KeyboardMemo = memo(Keyboard);
 const rowLength = 5;
-const word = "PEDRO";
 
 const GameContainer = () => {
+	const [accessDate, setAccessDate] = usePersistedState(
+		new Date(),
+		"ACCESS_DATE"
+	);
+	const [wordSet, setWordSet] = useState(new Set() as Set<string>);
+	const [word, setWord] = usePersistedState("", "WORD");
+
 	const [boardMatrix, setBoardMatrix] = usePersistedState(
 		defaultBoardMatrix,
 		"BOARD_MATRIX"
 	);
-	const currLetterPos = useRef(getFromLocalStorage("CURR_LETTER_POS", 0 as number));
+	const currLetterPos = useRef(
+		getFromLocalStorage("CURR_LETTER_POS", 0 as number)
+	);
 	const [gameState, setGameState] = usePersistedState(
 		GameState.PLAYING,
 		"GAME_STATE"
@@ -28,6 +37,7 @@ const GameContainer = () => {
 	const disabledKeys = useRef(
 		getFromLocalStorage("DISABLED_KEYS", [] as string[])
 	);
+
 	const attempts = useRef(getFromLocalStorage("ATTEMPTS", 0 as number));
 
 	const addLetter = useCallback(
@@ -35,7 +45,7 @@ const GameContainer = () => {
 			setBoardMatrix((boardMatrix) => {
 				const newBoard = [...boardMatrix];
 				newBoard[currRow][currLetterPos.current] = letter.toUpperCase();
-				
+
 				currLetterPos.current++;
 				localStorage.setItem(
 					"CURR_LETTER_POS",
@@ -65,9 +75,11 @@ const GameContainer = () => {
 
 	const submitAttempt = useCallback(() => {
 		attempts.current++;
-		localStorage.setItem("ATTEMPTS", JSON.stringify(attempts));
+		localStorage.setItem("ATTEMPTS", JSON.stringify(attempts.current));
 		const attemptedWord = boardMatrix[currRow].join("");
-		console.log(attemptedWord);
+
+		if (!wordSet.has(attemptedWord.toLowerCase())) return;
+
 		if (attemptedWord === word) setGameState(GameState.WON);
 		else if (currRow >= 5) setGameState(GameState.LOST);
 		else {
@@ -78,13 +90,12 @@ const GameContainer = () => {
 				JSON.stringify(currLetterPos.current)
 			);
 		}
-	}, [boardMatrix, currRow, setCurrRow, setGameState]);
+	}, [boardMatrix, currRow, setCurrRow, setGameState, word, wordSet]);
 
 	const handleInput = useCallback(
 		(key: string) => {
 			if (gameState !== GameState.PLAYING) return;
 
-			console.log(key);
 			if (/^[A-Za-z]$/.test(key) && currLetterPos.current < rowLength)
 				addLetter(key);
 			else if (key === "Backspace" && currLetterPos.current >= 0)
@@ -124,6 +135,28 @@ const GameContainer = () => {
 		localStorage.setItem("BOARD_MATRIX", JSON.stringify(boardMatrix));
 	}, [boardMatrix]);
 
+	useEffect(() => {
+		const set = generateWordSet();
+		setWordSet(set.wordSet);
+		const now = new Date();
+
+		if (
+			accessDate.getDate < now.getDate ||
+			accessDate.getMonth < now.getMonth ||
+			accessDate.getFullYear < now.getFullYear
+		) {
+			setBoardMatrix(defaultBoardMatrix);
+			setCurrRow(0);
+			currLetterPos.current = 0;
+			setGameState(GameState.PLAYING);
+			disabledKeys.current = [];
+			attempts.current = 0;
+			setWord("");
+		}
+
+		setWord((word) => (word === "" ? set.todayWord.toUpperCase() : word));
+	}, [accessDate, setBoardMatrix, setCurrRow, setGameState, setWord]);
+
 	return (
 		<GameContext.Provider
 			value={{
@@ -152,6 +185,11 @@ const GameContainer = () => {
 					className={gameState === GameState.WON ? "show" : ""}
 				>
 					{getWinMessage()}
+				</StyledToast>
+				<StyledToast
+					className={gameState === GameState.LOST ? "show" : ""}
+				>
+					{word}
 				</StyledToast>
 				<LetterGrid />
 			</div>

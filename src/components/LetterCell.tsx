@@ -18,7 +18,7 @@ const LetterCell = (props: LetterCellProps) => {
 	if (letter) {
 		if (currRow > props.rowId || gameState !== GameState.PLAYING) {
 			delayAnimation = true;
-				
+
 			if (letter === word.charAt(props.letterPos)) {
 				className = "correct";
 			} else {
